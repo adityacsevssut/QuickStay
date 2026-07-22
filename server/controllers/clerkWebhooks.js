@@ -3,7 +3,8 @@ import { Webhook } from "svix";
 
 const clerkWebhooks = async (req, res) => {
   try {
-    console.log("Webhook received:", req.body.type);
+    // req.body is now a Buffer because of express.raw()
+    const payloadString = req.body.toString("utf8");
 
     // Create A Svix Instance With Clerk Webhook Secret
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
@@ -16,10 +17,17 @@ const clerkWebhooks = async (req, res) => {
     };
 
     // Verifying Headers
-    await whook.verify(JSON.stringify(req.body), headers);
+    let evt;
+    try {
+      evt = whook.verify(payloadString, headers);
+    } catch (err) {
+      console.error("Webhook verification failed:", err.message);
+      return res.status(400).json({ success: false, message: err.message });
+    }
 
-    // Getting Data From req Body
-    const { data, type } = req.body;
+    // Getting Data From parsed event
+    const { data, type } = evt;
+    console.log("Webhook received type:", type);
 
     const userData = {
       _id: data.id,

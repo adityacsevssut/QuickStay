@@ -10,10 +10,10 @@ connectDB();
 const app = express();
 
 app.use(cors()); // it will enable Cross-origin resource sharing Means connect backend with
-app.use(express.json());
+// API to listen clerk Webhooks MUST be before express.json()
+app.post("/api/clerk", express.raw({ type: 'application/json' }), clerkWebhooks);
 
-// API to listen clerk Webhooks (BEFORE clerkMiddleware)
-app.post("/api/clerk", clerkWebhooks);
+app.use(express.json());
 
 app.use(clerkMiddleware());
 
